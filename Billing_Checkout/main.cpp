@@ -13,16 +13,19 @@ private:
     int quantity;
 
 public:
+    // Constructor
     CartItem(string name, double itemPrice, int itemQuantity) {
         productName = name;
         price = itemPrice;
         quantity = itemQuantity;
     }
 
+    // Calculates total price of this product
     double calculateTotal() const {
         return price * quantity;
     }
 
+    // Getter functions
     string getProductName() const {
         return productName;
     }
@@ -42,10 +45,12 @@ private:
     vector<CartItem> items;
 
 public:
+    // Adds a product to the cart
     void addItem(const CartItem& item) {
         items.push_back(item);
     }
 
+    // Calculates subtotal of all products
     double calculateSubtotal() const {
         double subtotal = 0;
 
@@ -56,6 +61,7 @@ public:
         return subtotal;
     }
 
+    // Displays shopping cart
     void displayCart() const {
         cout << "\n===== SHOPPING CART =====\n";
 
@@ -76,7 +82,7 @@ class DiscountStrategy {
 public:
     virtual double applyDiscount(double amount) const = 0;
 
-    virtual ~DiscountStrategy() = default;
+    virtual ~DiscountStrategy() {}
 };
 
 // Fixed amount discount
@@ -111,9 +117,23 @@ public:
 
 // Buy One Get One discount
 class BuyOneGetOne : public DiscountStrategy {
+private:
+    int quantity;
+
 public:
+    BuyOneGetOne(int q) {
+        quantity = q;
+    }
+
     double applyDiscount(double amount) const override {
-        return amount / 2;
+        if (quantity < 2) {
+            return 0;
+        }
+
+        double unitPrice = amount / quantity;
+        int freeItems = quantity / 2;
+
+        return unitPrice * freeItems;
     }
 };
 
@@ -125,32 +145,39 @@ private:
     double taxRate;
 
 public:
+    // Constructor
     Invoice(double sub, double discount, double tax) {
         subtotal = sub;
         discountAmount = (discount > sub) ? sub : discount;
         taxRate = tax;
     }
 
+    // Calculates tax after discount
     double calculateTax() const {
         double amountAfterDiscount = subtotal - discountAmount;
         return amountAfterDiscount * taxRate / 100;
     }
 
+    // Calculates final bill
     double calculateFinalTotal() const {
         return subtotal - discountAmount + calculateTax();
     }
 
+    // Displays final invoice
     void displayInvoice() const {
         cout << "\n===== FINAL INVOICE =====\n";
 
         cout << "Subtotal: $" << subtotal << endl;
         cout << "Discount: $" << discountAmount << endl;
+
         cout << "Amount After Discount: $"
              << subtotal - discountAmount << endl;
+
         cout << "Tax (" << taxRate << "%): $"
              << calculateTax() << endl;
 
         cout << "-------------------------\n";
+
         cout << "Final Amount: $"
              << calculateFinalTotal() << endl;
     }
@@ -167,9 +194,11 @@ int main() {
     // Creating shopping cart object
     ShoppingCart cart;
 
+    // Adding products to cart
     cart.addItem(item1);
     cart.addItem(item2);
 
+    // Displaying shopping cart
     cart.displayCart();
 
     double subtotal = cart.calculateSubtotal();
@@ -177,7 +206,8 @@ int main() {
     // Creating discount objects
     FlatDiscount flat(5.0);
     PercentageDiscount percentage(10.0);
-    BuyOneGetOne bogo;
+
+    BuyOneGetOne bogo(item1.getQuantity());
 
     cout << "\n===== DISCOUNT OPTIONS =====\n";
 
@@ -196,11 +226,13 @@ int main() {
     double discountAmount =
         selectedDiscount->applyDiscount(subtotal);
 
-    cout << "\nSelected Discount: $" << discountAmount << endl;
+    cout << "\nSelected Discount: $"
+         << discountAmount << endl;
 
     // Creating invoice object
     Invoice invoice(subtotal, discountAmount, 8.0);
 
+    // Displaying invoice
     invoice.displayInvoice();
 
     return 0;
