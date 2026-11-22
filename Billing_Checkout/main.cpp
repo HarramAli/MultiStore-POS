@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <iomanip>
 using namespace std;
 
 // Represents one product in the shopping cart
@@ -12,19 +13,16 @@ private:
     int quantity;
 
 public:
-    // Constructor
     CartItem(string name, double itemPrice, int itemQuantity) {
         productName = name;
         price = itemPrice;
         quantity = itemQuantity;
     }
 
-    // Calculates total price of this product
     double calculateTotal() const {
         return price * quantity;
     }
 
-    // Returns product information
     string getProductName() const {
         return productName;
     }
@@ -44,12 +42,10 @@ private:
     vector<CartItem> items;
 
 public:
-    // Adds a product to the cart
     void addItem(const CartItem& item) {
         items.push_back(item);
     }
 
-    // Calculates the subtotal of all products
     double calculateSubtotal() const {
         double subtotal = 0;
 
@@ -60,7 +56,6 @@ public:
         return subtotal;
     }
 
-    // Displays all cart products
     void displayCart() const {
         cout << "\n===== SHOPPING CART =====\n";
 
@@ -76,7 +71,94 @@ public:
     }
 };
 
+// Abstract base class for discount strategies
+class DiscountStrategy {
+public:
+    virtual double applyDiscount(double amount) const = 0;
+
+    virtual ~DiscountStrategy() = default;
+};
+
+// Fixed amount discount
+class FlatDiscount : public DiscountStrategy {
+private:
+    double discountAmount;
+
+public:
+    FlatDiscount(double amount) {
+        discountAmount = amount;
+    }
+
+    double applyDiscount(double amount) const override {
+        return (discountAmount > amount) ? amount : discountAmount;
+    }
+};
+
+// Percentage-based discount
+class PercentageDiscount : public DiscountStrategy {
+private:
+    double percentage;
+
+public:
+    PercentageDiscount(double percent) {
+        percentage = percent;
+    }
+
+    double applyDiscount(double amount) const override {
+        return amount * percentage / 100;
+    }
+};
+
+// Buy One Get One discount
+class BuyOneGetOne : public DiscountStrategy {
+public:
+    double applyDiscount(double amount) const override {
+        return amount / 2;
+    }
+};
+
+// Generates invoice and calculates tax
+class Invoice {
+private:
+    double subtotal;
+    double discountAmount;
+    double taxRate;
+
+public:
+    Invoice(double sub, double discount, double tax) {
+        subtotal = sub;
+        discountAmount = (discount > sub) ? sub : discount;
+        taxRate = tax;
+    }
+
+    double calculateTax() const {
+        double amountAfterDiscount = subtotal - discountAmount;
+        return amountAfterDiscount * taxRate / 100;
+    }
+
+    double calculateFinalTotal() const {
+        return subtotal - discountAmount + calculateTax();
+    }
+
+    void displayInvoice() const {
+        cout << "\n===== FINAL INVOICE =====\n";
+
+        cout << "Subtotal: $" << subtotal << endl;
+        cout << "Discount: $" << discountAmount << endl;
+        cout << "Amount After Discount: $"
+             << subtotal - discountAmount << endl;
+        cout << "Tax (" << taxRate << "%): $"
+             << calculateTax() << endl;
+
+        cout << "-------------------------\n";
+        cout << "Final Amount: $"
+             << calculateFinalTotal() << endl;
+    }
+};
+
 int main() {
+
+    cout << fixed << setprecision(2);
 
     // Creating product objects
     CartItem item1("Wireless Mouse", 25.0, 2);
@@ -85,12 +167,41 @@ int main() {
     // Creating shopping cart object
     ShoppingCart cart;
 
-    // Adding products to the cart
     cart.addItem(item1);
     cart.addItem(item2);
 
-    // Displaying cart information
     cart.displayCart();
+
+    double subtotal = cart.calculateSubtotal();
+
+    // Creating discount objects
+    FlatDiscount flat(5.0);
+    PercentageDiscount percentage(10.0);
+    BuyOneGetOne bogo;
+
+    cout << "\n===== DISCOUNT OPTIONS =====\n";
+
+    cout << "Flat Discount: $"
+         << flat.applyDiscount(subtotal) << endl;
+
+    cout << "Percentage Discount: $"
+         << percentage.applyDiscount(subtotal) << endl;
+
+    cout << "Buy One Get One Discount: $"
+         << bogo.applyDiscount(item1.calculateTotal()) << endl;
+
+    // Demonstrating polymorphism
+    DiscountStrategy* selectedDiscount = &percentage;
+
+    double discountAmount =
+        selectedDiscount->applyDiscount(subtotal);
+
+    cout << "\nSelected Discount: $" << discountAmount << endl;
+
+    // Creating invoice object
+    Invoice invoice(subtotal, discountAmount, 8.0);
+
+    invoice.displayInvoice();
 
     return 0;
 }
